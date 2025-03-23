@@ -1,0 +1,130 @@
+Debug:
+    --mlir-print-ir-after-all \
+    --mlir-disable-threading \
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    --mlir-pass-statistics \
+    --mlir-disable-threading \
+    mobilenetv2_noparam.mlir -o mobilenet_cuda_cli.vmfb \
+    &>| iree_pass_pipeline.txt 
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    --mlir-print-ir-after-all \
+    --mlir-disable-threading \
+    gpt_noparam.mlir -o gpt_noparam.vmfb \
+    &>| gpt_iree_print_after_all.txt 
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    --mlir-print-ir-after-all \
+    --mlir-disable-threading \
+    softmax_regression_noparam.mlir -o softmax_regression_noparam.vmfb \
+    &>| softmax_regression_iree_print_after_all.txt 
+
+Test :
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    --mlir-disable-threading \
+    mobilenetv2_noparam.mlir -o mobilenet_cuda_noparam.vmfb 
+
+iree-run-module \
+    --device=cuda \
+    --module=mobilenet_cuda_noparam.vmfb \
+    --function=torch-jit-export \
+    --input="1x3x224x224xf32=0"
+
+iree-import-onnx gpt.onnx --externalize-params  --opset-version 17 -o gpt_noparam.mlir
+iree-import-onnx gpt.onnx --opset-version 17 -o gpt.mlir
+iree-import-onnx softmax_regression.onnx --externalize-params  --opset-version 17 -o softmax_regression_noparam.mlir
+
+--------------------------------------------------------------------
+no param compile:
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    gpt_noparam.mlir \
+    -o gpt_noparam.vmfb 
+
+iree-run-module \
+    --device=cuda \
+    --parameters=model=gpt_noparam_params.irpa \
+    --module=gpt_noparam.vmfb \
+    --function=main_graph \
+    --input="1x67xsi64=0"
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    softmax_regression_noparam.mlir \
+    -o softmax_regression_noparam.vmfb 
+
+iree-run-module \
+    --device=cuda \
+    --parameters=model=softmax_regression_noparam_params.irpa \
+    --module=softmax_regression_noparam.vmfb \
+    --function=torch_jit \
+    --input="1x1x28x28xf32=0"
+
+--------------------------------------------------------------------
+with param compile:
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    gpt.mlir -o gpt.vmfb 
+
+iree-run-module \
+    --device=cuda \
+    --module=gpt.vmfb \
+    --function=main_graph \
+    --input="1x67xsi64=0"
+
+
+--------------------------------------------------------------------
+compile flag:
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    --output-format=vm-c \
+    softmax_regression_noparam.mlir \
+    -o test_format.vmfb
+
+iree-run-module
+# Traces VM execution to stderr.
+--trace_execution=false
+
+
+--------------------------------------------------------------------
+multiple devices:
+
+iree-compile \
+  --iree-execution-model=async-external \
+  --iree-global-opt-enable-early-materialization=false \
+  --iree-stream-experimental-specialize-encodings=true \
+  dt_multi_device.mlir -o dt_multi_device.vmfb
+
+iree-run-module \
+    --device=local-task \
+    --module=dt_multi_device.vmfb \
+    --function=foo \
+    --input=1x10xf32=2 \
+    --input=10x1xf32=2
+
+
+vmvx:
+iree-compile \
+    --iree-hal-target-backends=vmvx \
+    softmax_regression.mlir -o softmax_regression.vmfb \
+
+iree-run-module \
+    --device=local-task \
+    --parameters=model=softmax_regression_params.irpa \
+    --module=softmax_regression.vmfb \
+    --function=torch_jit \
+    --input=1x1x28x28xf32=0
