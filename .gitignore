@@ -99,3 +99,9 @@ artifacts/
 # Side effects of local patching/merging
 *.orig
 *.rej
+
+temp.txt
+test.sh
+**/*compilation_phase*/
+**/*.vmfb
+**/*.irpa

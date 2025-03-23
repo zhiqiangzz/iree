@@ -1,0 +1,48 @@
+export HTTPS_PROXY=http://sys-proxy-rd-relay.byted.org:8118
+export https_proxy=http://sys-proxy-rd-relay.byted.org:8118
+export HTTP_PROXY=http://sys-proxy-rd-relay.byted.org:8118
+export http_proxy=http://sys-proxy-rd-relay.byted.org:8118
+sudo apt install ninja-build llvm clang clangd lldb lld ccache -y
+
+git clone --depth=1 https://github.com/iree-org/iree.git
+cd iree
+git submodule update --init 
+
+# Recommended development options using clang and lld:
+cmake -B build/Debug -G Ninja -S . \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DIREE_ENABLE_ASSERTIONS=ON \
+    -DIREE_ENABLE_SPLIT_DWARF=ON \
+    -DIREE_ENABLE_THIN_ARCHIVES=ON \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+    -DIREE_ENABLE_LLD=ON \
+	-DPython3_EXECUTABLE=$(which python3) \
+    -DPython_EXECUTABLE=$(which python) \
+    -DIREE_BUILD_PYTHON_BINDINGS=ON  \
+	-DIREE_TARGET_BACKEND_CUDA=ON \
+    -DIREE_HAL_DRIVER_CUDA=ON
+
+cmake --build build/Debug
+
+export PATH="$(pwd)/build/Debug/tools:$PATH"
+
+CMAKE_INSTALL_METHOD=ABS_SYMLINK python -m pip install -e build/Debug/compiler
+CMAKE_INSTALL_METHOD=ABS_SYMLINK python -m pip install -e build/Debug/runtime
+
+iree-compile \
+    --iree-hal-target-backends=cuda \
+    --iree-cuda-target=sm_80 \
+    mobilenetv2.mlir -o mobilenet_cuda.vmfb
+
+iree-run-module \
+    --device=cuda \
+    --module=mobilenet_cuda.vmfb \
+    --function=torch-jit-export \
+    --input="1x3x224x224xf32=0"
+
+Release:
+CMAKE_INSTALL_METHOD=ABS_SYMLINK python -m pip install -e build/Release/compiler
+CMAKE_INSTALL_METHOD=ABS_SYMLINK python -m pip install -e build/Release/runtime
