@@ -128,3 +128,36 @@ iree-run-module \
     --module=softmax_regression.vmfb \
     --function=torch_jit \
     --input=1x1x28x28xf32=0
+
+Debug:
+iree-compile \
+  --iree-llvmcpu-target-cpu=host \
+  --iree-hal-target-device='cuda[0]' \
+  --iree-hal-target-device='cuda[1]' \
+  --iree-cuda-target=sm_80 \
+  --compile-from=vm \
+  12.vm.mlir -o debug.vmfb 
+  
+
+iree-run-module \
+  --device=cuda://GPU-55b2b321-c6c9-dc31-afe3-72f56fb9612d \
+  --device=cuda://GPU-fe10e8dc-a093-1f35-4594-b738ceab830b \
+  --module=debug.vmfb \
+  --function=foo \
+  --input=1x10xf32=2 \
+  --input=10x1xf32=4
+
+iree-run-module \
+  --device=cuda://GPU-55b2b321-c6c9-dc31-afe3-72f56fb9612d \
+  --device=cuda://GPU-fe10e8dc-a093-1f35-4594-b738ceab830b \
+  --module=dt_multi_device_gpu_gpu.vmfb \
+  --function=foo \
+  --input=1x10xf32=2 \
+  --input=10x1xf32=4 \
+  --trace_execution=true \
+  --cuda_tracing=2
+  
+  
+iree/runtime/src/iree/hal/drivers/cuda/stream_command_buffer.c:587: 
+INVALID_ARGUMENT; CUDA error 'CUDA_ERROR_INVALID_HANDLE' (400): 
+invalid resource handle; cuLaunchKernel

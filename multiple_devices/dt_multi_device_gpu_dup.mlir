@@ -1,7 +1,7 @@
 #executable_target_cuda_nvptx_fb = #hal.executable.target<"cuda", "cuda-nvptx-fb", {iree.gpu.target = #iree_gpu.target<arch = "sm_80", features = "+ptx76", wgp = <compute =  fp64|fp32|fp16|int64|int32|int16|int8, storage =  b64|b32|b16|b8, subgroup =  shuffle|arithmetic, dot =  dp4xi8toi32, mma = [<NV_WMMA_F32_16x16x16_F16>, <NV_WMMA_F16_16x16x16_F16>], subgroup_size_choices = [32], max_workgroup_sizes = [1024, 1024, 1024], max_thread_count_per_workgroup = 1024, max_workgroup_memory_bytes = 166912, max_workgroup_counts = [2147483647, 65535, 65535]>>}>
 
 #device_target_cuda_0_ = #hal.device.target<"cuda", {ordinal = 0 : index}, [#executable_target_cuda_nvptx_fb]> : !hal.device
-#device_target_cuda_1_ = #hal.device.target<"cuda", {ordinal = 1 : index}, [#executable_target_cuda_nvptx_fb]> : !hal.device
+#device_target_cuda_1_ = #hal.device.target<"cuda", {ordinal = 0 : index}, [#executable_target_cuda_nvptx_fb]> : !hal.device
 
 util.global private @device_a = #device_target_cuda_0_
 util.global private @device_b = #device_target_cuda_1_

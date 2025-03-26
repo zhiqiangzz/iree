@@ -1,9 +1,12 @@
+// x86 CPU that has `+avx512f` feature.
+#executable_target_embedded_elf_x86_64_with_encoding_layout = #hal.executable.target<"llvm-cpu", "embedded-elf-x86_64", {cpu = "sapphirerapids", cpu_features = "+prfchw,+cldemote,+avx,+aes,+sahf,+pclmul,-xop,+crc32,-amx-fp8,+xsaves,+avx512fp16,-usermsr,-sm4,-egpr,+sse4.1,+avx512ifma,+xsave,+sse4.2,+tsxldtrk,-sm3,-ptwrite,-widekl,-movrs,+invpcid,+64bit,+xsavec,-avx10.1-512,+avx512vpopcntdq,+cmov,-avx512vp2intersect,+avx512cd,+movbe,-avxvnniint8,-ccmp,+amx-int8,-kl,-avx10.1-256,+evex512,+avxvnni,-rtm,+adx,+avx2,-hreset,+movdiri,+serialize,-sha512,+vpclmulqdq,+avx512vl,-uintr,-cf,+clflushopt,-raoint,-cmpccxadd,+bmi,+amx-tile,+sse,-avx10.2-256,+gfni,-avxvnniint16,-amx-fp16,-zu,-ndd,+xsaveopt,+rdrnd,+avx512f,+amx-bf16,+avx512bf16,+avx512vnni,-push2pop2,+cx8,+avx512bw,+sse3,+pku,-nf,-amx-tf32,-amx-avx512,+fsgsbase,-clzero,-mwaitx,-lwp,+lzcnt,+sha,+movdir64b,-ppx,+wbnoinvd,-enqcmd,-amx-transpose,-avx10.2-512,-avxneconvert,-tbm,-pconfig,-amx-complex,+ssse3,+cx16,+bmi2,+fma,+popcnt,-avxifma,+f16c,+avx512bitalg,-rdpru,+clwb,+mmx,+sse2,+rdseed,+avx512vbmi2,-prefetchi,-amx-movrs,+rdpid,-fma4,+avx512vbmi,-shstk,+vaes,+waitpkg,-sgx,+fxsr,+avx512dq,-sse4a", data_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128", iree.encoding.resolver = #iree_cpu.cpu_encoding_layout<>, max_stack_allocation_size = 32768 : i64, native_vector_size = 64 : i64, target_triple = "x86_64-unknown-unknown-eabi-elf"}>
+
 #executable_target_cuda_nvptx_fb = #hal.executable.target<"cuda", "cuda-nvptx-fb", {iree.gpu.target = #iree_gpu.target<arch = "sm_80", features = "+ptx76", wgp = <compute =  fp64|fp32|fp16|int64|int32|int16|int8, storage =  b64|b32|b16|b8, subgroup =  shuffle|arithmetic, dot =  dp4xi8toi32, mma = [<NV_WMMA_F32_16x16x16_F16>, <NV_WMMA_F16_16x16x16_F16>], subgroup_size_choices = [32], max_workgroup_sizes = [1024, 1024, 1024], max_thread_count_per_workgroup = 1024, max_workgroup_memory_bytes = 166912, max_workgroup_counts = [2147483647, 65535, 65535]>>}>
 
-#device_target_cuda_0_ = #hal.device.target<"cuda", {ordinal = 0 : index}, [#executable_target_cuda_nvptx_fb]> : !hal.device
-#device_target_cuda_1_ = #hal.device.target<"cuda", {ordinal = 1 : index}, [#executable_target_cuda_nvptx_fb]> : !hal.device
+#device_target_local = #hal.device.target<"local", [#executable_target_embedded_elf_x86_64_with_encoding_layout]> : !hal.device
+#device_target_cuda_1_ = #hal.device.target<"cuda", [#executable_target_cuda_nvptx_fb]> : !hal.device
 
-util.global private @device_a = #device_target_cuda_0_
+util.global private @device_a = #device_target_local
 util.global private @device_b = #device_target_cuda_1_
 
 func.func @foo(

@@ -10,6 +10,7 @@ git submodule update --init
 
 # Recommended development options using clang and lld:
 cmake -B build/Debug -G Ninja -S . \
+    -DIREE_ENABLE_RUNTIME_TRACING=ON \
     -DCMAKE_BUILD_TYPE=Debug \
     -DIREE_ENABLE_ASSERTIONS=ON \
     -DIREE_ENABLE_SPLIT_DWARF=ON \
